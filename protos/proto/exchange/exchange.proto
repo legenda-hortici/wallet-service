@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+// Текущий пакет - указывает пространство имен для сервиса и сообщений. Помогает избегать конфликтов имен.
+package exchange;
+
+// Настройки для генерации Go кода.
+option go_package = "maxim.wallet.v1;walletv1";
+
+// Определение сервиса
+service ExchangeService {
+    // Получение курсов обмена всех валют
+    rpc GetExchangeRates(Empty) returns (ExchangeRatesResponse);
+    
+    // Получение курса обмена для конкретной валюты
+    rpc GetExchangeRateForCurrency(CurrencyRequest) returns (ExchangeRateResponse);
+}
+
+// Запрос для получения курса обмена для конкретной валюты
+message CurrencyRequest {
+    string from_currency = 1;
+    string to_currency = 2;
+}
+
+// Ответ с курсом обмена для конкретной валюты
+message ExchangeRateResponse {
+    string from_currency = 1;
+    string to_currency = 2;
+    float rate = 3;
+}
+
+// Ответ с курсами обмена всех валют
+message ExchangeRatesResponse {
+    map<string, float> rates = 1; // ключ: валюта, значение: курс
+}
+
+// Пустое сообщение
+message Empty {}
+
