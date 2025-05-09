@@ -1,10 +1,13 @@
 package main
 
 import (
+	"gw-exchanger/internal/app"
 	"gw-exchanger/internal/config"
 	"gw-exchanger/internal/lib/logger/handlers/slogpretty"
 	"log/slog"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 const (
@@ -21,9 +24,26 @@ func main() {
 	log := setupLogger(cfg.Env)
 	log.Info("starting gw-exchanger")
 
-	// TODO: инициализировать приложение (app)
+	log.Info("config", slog.Any("config", cfg))
 
-	// TODO: запустить gRPC-сервер приложения
+	application := app.New(
+		log,
+		cfg.GRPC.Port,
+		cfg.StoragePath,
+		cfg.TokenTTL,
+	)
+
+	go func() {
+		application.GRPCSrv.MustRun()
+	}()
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
+
+	<-stop
+
+	application.GRPCSrv.Stop()
+	log.Info("gracefully stopped gw-exchanger")
 }
 
 func setupLogger(env string) *slog.Logger {

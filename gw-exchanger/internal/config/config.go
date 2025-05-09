@@ -9,10 +9,10 @@ import (
 )
 
 type Config struct {
-	Env         string     `yaml:"env" env-default:"local"`          // Окружение разработки
-	StoragePath string     `yaml:"storage_path" env-required:"true"` // Путь до БД
-	TokenTTL    string     `yaml:"token_ttl" env-default:"1h"`       // Время жизни токена
-	GRPC        GRPCConfig `yaml:"grpc"`                             // Конфигурация gRPC
+	Env         string        `yaml:"env" env-default:"local"`          // Окружение разработки
+	StoragePath string        `yaml:"storage_path" env-required:"true"` // Путь до БД
+	TokenTTL    time.Duration `yaml:"token_ttl" env-default:"1h"`       // Время жизни токена
+	GRPC        GRPCConfig    `yaml:"grpc"`                             // Конфигурация gRPC
 }
 
 type GRPCConfig struct {
