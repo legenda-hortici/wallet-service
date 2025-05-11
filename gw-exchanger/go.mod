@@ -6,6 +6,7 @@ require (
 	github.com/fatih/color v1.18.0
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/legenda-hortici/protos v0.0.0-20250501212028-fb716be3e7db
+	github.com/mattn/go-sqlite3 v1.14.28
 	google.golang.org/grpc v1.72.0
 )
 

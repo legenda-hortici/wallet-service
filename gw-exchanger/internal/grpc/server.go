@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// Exchange - интерфейс сервиса
+// Exchange - интерфейс сервиса который нужно реализовать
 type Exchange interface {
 	GetExchangeRates(context.Context, *walletv1.Empty) (*walletv1.ExchangeRatesResponse, error)
 	GetExchangeRateForCurrency(context.Context, *walletv1.CurrencyRequest) (*walletv1.ExchangeRateResponse, error)
@@ -24,7 +24,11 @@ type serverAPI struct {
 
 // Register - создание сервиса
 func Register(gRPCServer *grpc.Server, exchange Exchange) {
-	walletv1.RegisterExchangeServiceServer(gRPCServer, &serverAPI{exchange: exchange})
+	walletv1.RegisterExchangeServiceServer(
+		gRPCServer,
+		&serverAPI{
+			exchange: exchange,
+		})
 }
 
 // GetExchangeRates - получение курсов обмена всех валют

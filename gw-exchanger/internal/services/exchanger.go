@@ -5,40 +5,44 @@ import (
 	"errors"
 	"fmt"
 	"gw-exchanger/internal/lib/logger/sl"
+	"gw-exchanger/internal/sqlite"
 	"gw-exchanger/internal/storage"
 	"log/slog"
 
 	walletv1 "github.com/legenda-hortici/protos/gen/go/exchange"
 )
 
-// ExchangeService - сервис обмена валют
-type ExchangeService struct {
+// ExchangeSrvc - структура сервисного слоя обмена валют
+type ExchangeSrvc struct {
 	log          *slog.Logger
 	rateProvider RatesProvider
+	storage      sqlite.Storage
 }
 
-// RatesProvider - сервис получения курсов обмена
+// RatesProvider - интерфейс получения курсов обмена
 type RatesProvider interface {
 	GetExchangeRateForCurrency(ctx context.Context, req *walletv1.CurrencyRequest) (map[string]float32, error)
 	GetExchangeRates(ctx context.Context, _ *walletv1.Empty) (map[string]float32, error)
 }
 
-// New - создание сервиса
+// New - создание сервисного слоя
 func New(
 	log *slog.Logger,
 	rateProvider RatesProvider,
-) *ExchangeService {
-	return &ExchangeService{
+	storage *sqlite.Storage,
+) *ExchangeSrvc {
+	return &ExchangeSrvc{
 		log:          log,
 		rateProvider: rateProvider,
+		storage:      *storage,
 	}
 }
 
-// GetExchangeRates реализует grpc-интерфейс
-func (e *ExchangeService) GetExchangeRates(ctx context.Context, _ *walletv1.Empty) (*walletv1.ExchangeRatesResponse, error) {
+// GetExchangeRates реализует grpc-интерфейс RatesProvider
+func (e *ExchangeSrvc) GetExchangeRates(ctx context.Context, _ *walletv1.Empty) (*walletv1.ExchangeRatesResponse, error) {
 	const op = "exchanger.GetExchangeRates"
 
-	ratesMap, err := e.rateProvider.GetExchangeRates(ctx, &walletv1.Empty{})
+	ratesMap, err := e.storage.GetRates(ctx)
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
 			e.log.Warn("rates not found", sl.Err(err))
@@ -53,15 +57,15 @@ func (e *ExchangeService) GetExchangeRates(ctx context.Context, _ *walletv1.Empt
 	}, nil
 }
 
-// GetExchangeRateForCurrency реализует grpc-интерфейс
-func (e *ExchangeService) GetExchangeRateForCurrency(ctx context.Context, req *walletv1.CurrencyRequest) (*walletv1.ExchangeRateResponse, error) {
+// GetExchangeRateForCurrency реализует grpc-интерфейс RatesProvider
+func (e *ExchangeSrvc) GetExchangeRateForCurrency(ctx context.Context, req *walletv1.CurrencyRequest) (*walletv1.ExchangeRateResponse, error) {
 	const op = "exchanger.GetExchangeRateForCurrency"
 
 	if req.FromCurrency == "" || req.ToCurrency == "" {
 		return nil, fmt.Errorf("%s: from/to currency is empty", op)
 	}
 
-	rateMap, err := e.rateProvider.GetExchangeRateForCurrency(ctx, req)
+	rate, err := e.storage.GetRate(ctx, req.FromCurrency, req.ToCurrency)
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
 			e.log.Warn("rate not found", sl.Err(err))
@@ -72,6 +76,6 @@ func (e *ExchangeService) GetExchangeRateForCurrency(ctx context.Context, req *w
 	}
 
 	return &walletv1.ExchangeRateResponse{
-		Rate: rateMap[req.FromCurrency+req.ToCurrency],
+		Rate: rate,
 	}, nil
 }

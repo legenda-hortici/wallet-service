@@ -2,25 +2,25 @@ package grpcapp
 
 import (
 	"fmt"
-	exchangergrpc "gw-exchanger/internal/grpc/exchanger"
-	"gw-exchanger/internal/services/exchanger"
+	exchangergrpc "gw-exchanger/internal/grpc"
+	exchanger "gw-exchanger/internal/services"
 	"log/slog"
 	"net"
 
 	"google.golang.org/grpc"
 )
 
-// App - приложение
+// App - сервер gRPC
 type App struct {
 	log        *slog.Logger
 	gRPCServer *grpc.Server
 	port       int
 }
 
-// New - создание приложения
+// New - создание сервера gRPC
 func New(
 	log *slog.Logger,
-	exchangeGrpc *exchanger.ExchangeService,
+	exchangeGrpc *exchanger.ExchangeSrvc,
 	port int,
 ) *App {
 	grpcServer := grpc.NewServer()
